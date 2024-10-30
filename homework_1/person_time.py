@@ -27,6 +27,7 @@ for person in result:
 # ตัวแปรเพื่อติดตามสถานะ Check-in/Check-out
 check_status = {name: None for name in person_face_names}
 last_seen = {name: None for name in person_face_names}
+last_timestamp = {name: None for name in person_face_names}  # ตัวแปรเก็บ timestamp ล่าสุดที่แสดงผลบนหน้าจอ
 absent_time = 5  # กำหนดระยะเวลา (วินาที) ที่ต้องไม่พบใบหน้าในเฟรมเพื่อสลับสถานะใหม่
 
 # ตั้งค่ากล้องและการตรวจจับใบหน้า
@@ -63,6 +64,7 @@ while True:
                     })
                     print(f"{name} has checked in at {current_time}")
                     check_status[name] = 'Check-in'
+                    last_timestamp[name] = current_time.strftime('%Y-%m-%d %H:%M:%S')
                 
                 # เงื่อนไขที่ 2: สลับสถานะหากไม่พบใบหน้าอย่างน้อย 5 วินาทีและพบอีกครั้ง
                 elif last_seen[name] is not None:
@@ -77,24 +79,38 @@ while True:
                         })
                         print(f"{name} has {new_status.lower()}ed at {current_time}")
                         check_status[name] = new_status  # อัปเดตสถานะใหม่หลังสลับสถานะ
+                        last_timestamp[name] = current_time.strftime('%Y-%m-%d %H:%M:%S')  # อัปเดต timestamp ใหม่
 
                 # บันทึกเวลาล่าสุดที่พบใบหน้า
                 last_seen[name] = current_time
+            else:
+                status = "UNKNOWN"
+                last_timestamp[name] = "N/A"
+
+            # เก็บข้อมูลเพื่อแสดงผลบนหน้าจอ
+            data_names.append((name, check_status.get(name, "N/A"), last_timestamp.get(name, "N/A")))
 
             data_names.append(name)
 
     frameProcess = not frameProcess
 
     # แสดงผลในหน้าจอ
-    for (top, right, bottom, left), name in zip(data_locations, data_names):
+    for (top, right, bottom, left), (name, status, timestamp) in zip(data_locations, data_names):
         top *= 4
         right *= 4
         bottom *= 4
         left *= 4
+        # วาดกรอบรอบใบหน้า
         cv2.rectangle(frame, (left, top), (right, bottom), (26, 174, 10), 2)
-        cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (26, 174, 10), cv2.FILLED)
-        font = cv2.FONT_HERSHEY_DUPLEX
-        cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+
+         # แสดงชื่อ และสถานะที่บรรทัดแรก
+        display_text_name_status = f"Name: {name}, Status: {status}"
+        cv2.putText(frame, display_text_name_status, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+        # แสดงเวลาที่บรรทัดถัดไป
+        display_text_time = f"Time: {timestamp}"
+        cv2.putText(frame, display_text_time, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
     cv2.imshow('Video', frame)
     
     if cv2.waitKey(25) == 13:
