@@ -1,25 +1,34 @@
 import cv2
 import face_recognition
-from firebase import firebase
+import firebase_admin
+from firebase_admin import credentials, db
 import json
-import requests
 import numpy as np
+import requests
 
+# ตั้งค่า Firebase Admin SDK
+cred = credentials.Certificate("key/serviceAccountKey.json")  # แทนที่ path นี้ด้วย path ของไฟล์ serviceAccountKey.json
+firebase_admin.initialize_app(cred, {
+    'databaseURL': 'https://we674-ml-f62d5-default-rtdb.firebaseio.com/'
+})
+
+# โหลดข้อมูลจาก Firebase
 person_face_encodings = []
 person_face_names = []
 
-videoCapture = cv2.VideoCapture(0)
-firebase = firebase.FirebaseApplication('https://we674-ml-f62d5-default-rtdb.firebaseio.com/testpython/', None)
-result = firebase.get('/testpython/', '')
+ref = db.reference('/testpython')
+result = ref.get()
 for person in result:
-    jsn = requests.get('https://we674-ml-f62d5-default-rtdb.firebaseio.com/testpython.json')
-    data = jsn.json()
+    data = result[person]
 
-    database_image = face_recognition.load_image_file(''+ data[person]['Image'])
+    # โหลดภาพจากไฟล์ที่กำหนดในฐานข้อมูล
+    database_image = face_recognition.load_image_file(data['Image'])
     data_base_encoding = face_recognition.face_encodings(database_image)[0]
-    person_face_names.append(data[person]['Name'])
+    person_face_names.append(data['Name'])
     person_face_encodings.append(data_base_encoding)
 
+# ตั้งค่ากล้องและการตรวจจับใบหน้า
+videoCapture = cv2.VideoCapture(0)
 data_locations = []
 data_encodings = []
 data_names = []
@@ -39,7 +48,6 @@ while True:
             if True in matches:
                 first_match_index = matches.index(True)
                 name = person_face_names[first_match_index]
-
             data_names.append(name)
     frameProcess = not frameProcess
     for (top, right, bottom, left), name in zip(data_locations, data_names):
@@ -55,6 +63,6 @@ while True:
     
     if cv2.waitKey(25) == 13:
         break
- 
+
 videoCapture.release()
 cv2.destroyAllWindows()
