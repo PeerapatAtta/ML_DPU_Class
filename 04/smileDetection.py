@@ -1,8 +1,8 @@
 import cv2
 # เปิดวิดีโอ (หรือใช้ 0 เพื่อเปิดเว็บแคม)
-# cap = cv2.VideoCapture('videos/ryan.mp4')
+cap = cv2.VideoCapture('videos/ryan.mp4')
 #For webcam
-cap = cv2.VideoCapture(0)
+# cap = cv2.VideoCapture(0)
 # โหลด Haar cascade classifier สำหรับตรวจจับใบหน้าและรอยยิ้ม
 face_cascade = cv2.CascadeClassifier('dataset/haarcascade_frontalface_default.xml')
 smile_cascade = cv2.CascadeClassifier('dataset/haarcascade_smile.xml')  
